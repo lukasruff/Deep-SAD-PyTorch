@@ -1,5 +1,4 @@
-# Deep SAD
-# A Deep Semi-Supervised Anomaly Detection Method
+# Deep SAD: a method for deep Semi-supervised Anomaly Detection
 This repository will provide a [PyTorch](https://pytorch.org/) implementation of the *Deep SAD* method presented in our paper ”Deep Semi-Supervised Anomaly Detection”.
 
 **6 Jun 2019: I'm in the process of cleaning up the code. The full code will be released shortly.**
