@@ -130,7 +130,7 @@ class DeepSAD(object):
         """Save Deep SAD model to export_model."""
 
         net_dict = self.net.state_dict()
-        ae_net_dict = self.ae_net.state_dict() if save_ae else None
+        ae_net_dict = self.ae_net.state_dict() if (save_ae and self.ae_net is not None) else None
 
         torch.save({'c': self.c,
                     'net_dict': net_dict,
