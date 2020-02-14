@@ -8,11 +8,12 @@ You find a PDF of the Deep Semi-Supervised Anomaly Detection ICLR 2020 paper on 
 
 If you find our work useful, please also cite the paper:
 ```
-@InProceedings{ruff2019,
+@InProceedings{ruff2020deep,
   title     = {Deep Semi-Supervised Anomaly Detection},
   author    = {Ruff, Lukas and Vandermeulen, Robert A. and G{\"o}rnitz, Nico and Binder, Alexander and M{\"u}ller, Emmanuel and M{\"u}ller, Klaus-Robert and Kloft, Marius},
-  booktitle = {ICLR},
-  year      = {2020}
+  booktitle = {International Conference on Learning Representations},
+  year      = {2020},
+  url       = {https://openreview.net/forum?id=HkgH0TEYwH}
 }
 ```
 
