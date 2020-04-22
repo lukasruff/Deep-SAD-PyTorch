@@ -28,15 +28,16 @@ class DeepSADTrainer(BaseTrainer):
 
         # Results
         self.train_time = None
+        self.train_loss = None
         self.test_auc = None
         self.test_time = None
         self.test_scores = None
 
-    def train(self, dataset: BaseADDataset, net: BaseNet):
+    def train(self, dataset: BaseADDataset, net: BaseNet, validate: bool = False):
         logger = logging.getLogger()
 
         # Get train data loader
-        train_loader, _ = dataset.loaders(batch_size=self.batch_size, num_workers=self.n_jobs_dataloader)
+        train_loader, test_loader = dataset.loaders(batch_size=self.batch_size, num_workers=self.n_jobs_dataloader)
 
         # Set device for network
         net = net.to(self.device)
@@ -57,13 +58,14 @@ class DeepSADTrainer(BaseTrainer):
         logger.info('Starting training...')
         start_time = time.time()
         net.train()
+        self.train_loss = []
         for epoch in range(self.n_epochs):
 
             scheduler.step()
             if epoch in self.lr_milestones:
                 logger.info('  LR scheduler: new learning rate is %g' % float(scheduler.get_lr()[0]))
 
-            epoch_loss = 0.0
+            train_epoch_loss = 0.0
             n_batches = 0
             epoch_start_time = time.time()
             for data in train_loader:
@@ -81,13 +83,39 @@ class DeepSADTrainer(BaseTrainer):
                 loss.backward()
                 optimizer.step()
 
-                epoch_loss += loss.item()
+                train_epoch_loss += loss.item()
                 n_batches += 1
 
+            train_loss = train_epoch_loss/n_batches
+            epoch_loss_history = (epoch + 1, train_loss)
+
+            if validate:
+                n_batches = 0
+                test_epoch_loss = 0.0
+                with torch.set_grad_enabled(False):
+                    for data in test_loader:
+                        inputs, _, semi_targets, _ = data
+                        inputs, semi_targets = inputs.to(self.device), semi_targets.to(self.device)
+
+                        outputs = net(inputs)
+                        dist = torch.sum((outputs - self.c) ** 2, dim=1)
+                        losses = torch.where(semi_targets == 0, dist, self.eta * ((dist + self.eps) ** semi_targets.float()))
+                        loss = torch.mean(losses)
+
+                        test_epoch_loss += loss.item()
+                        n_batches += 1
+                test_loss = test_epoch_loss/n_batches
+                epoch_loss_history = (epoch + 1, train_loss, test_loss)
+
+            self.train_loss.append(epoch_loss_history)
             # log epoch statistics
             epoch_train_time = time.time() - epoch_start_time
-            logger.info(f'| Epoch: {epoch + 1:03}/{self.n_epochs:03} | Train Time: {epoch_train_time:.3f}s '
-                        f'| Train Loss: {epoch_loss / n_batches:.6f} |')
+
+            stats = f'| Epoch: {epoch + 1:03}/{self.n_epochs:03} | Train Time: {epoch_train_time:.3f}s ' \
+                f'| Train Loss: {train_loss:.6f}'
+            if validate:
+                stats = stats + f' | Validation Loss: {test_loss:.6f}'
+            logger.info(stats)
 
         self.train_time = time.time() - start_time
         logger.info('Training Time: {:.3f}s'.format(self.train_time))
