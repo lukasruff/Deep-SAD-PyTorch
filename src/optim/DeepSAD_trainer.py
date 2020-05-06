@@ -37,7 +37,7 @@ class DeepSADTrainer(BaseTrainer):
         logger = logging.getLogger()
 
         # Get train data loader
-        train_loader, test_loader = dataset.loaders(batch_size=self.batch_size, num_workers=self.n_jobs_dataloader)
+        train_loader, _ = dataset.loaders(batch_size=self.batch_size, num_workers=self.n_jobs_dataloader)
 
         # Set device for network
         net = net.to(self.device)
@@ -91,9 +91,10 @@ class DeepSADTrainer(BaseTrainer):
 
             if validate:
                 n_batches = 0
-                test_epoch_loss = 0.0
+                valid_epoch_loss = 0.0
+                valid_loader = dataset.validation_loader(batch_size=self.batch_size, num_workers=self.n_jobs_dataloader)
                 with torch.set_grad_enabled(False):
-                    for data in test_loader:
+                    for data in valid_loader:
                         inputs, _, semi_targets, _ = data
                         inputs, semi_targets = inputs.to(self.device), semi_targets.to(self.device)
 
@@ -102,10 +103,10 @@ class DeepSADTrainer(BaseTrainer):
                         losses = torch.where(semi_targets == 0, dist, self.eta * ((dist + self.eps) ** semi_targets.float()))
                         loss = torch.mean(losses)
 
-                        test_epoch_loss += loss.item()
+                        valid_epoch_loss += loss.item()
                         n_batches += 1
-                test_loss = test_epoch_loss/n_batches
-                epoch_loss_history = (epoch + 1, train_loss, test_loss)
+                valid_loss = valid_epoch_loss/n_batches
+                epoch_loss_history = (epoch + 1, train_loss, valid_loss)
 
             self.train_loss.append(epoch_loss_history)
             # log epoch statistics
@@ -114,7 +115,7 @@ class DeepSADTrainer(BaseTrainer):
             stats = f'| Epoch: {epoch + 1:03}/{self.n_epochs:03} | Train Time: {epoch_train_time:.3f}s ' \
                 f'| Train Loss: {train_loss:.6f}'
             if validate:
-                stats = stats + f' | Validation Loss: {test_loss:.6f}'
+                stats = stats + f' | Valid Loss: {valid_loss:.6f}'
             logger.info(stats)
 
         self.train_time = time.time() - start_time
