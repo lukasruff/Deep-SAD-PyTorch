@@ -46,13 +46,13 @@ class DeepSADTrainer(BaseTrainer):
         optimizer = optim.Adam(net.parameters(), lr=self.lr, weight_decay=self.weight_decay)
 
         # Set learning rate scheduler
-        scheduler = optim.lr_scheduler.MultiStepLR(optimizer, milestones=self.lr_milestones, gamma=0.1)
+        self.scheduler = optim.lr_scheduler.MultiStepLR(optimizer, milestones=self.lr_milestones, gamma=0.1)
 
         # Initialize hypersphere center c (if c not loaded)
         if self.c is None:
             logger.info('Initializing center c...')
             self.c = self.init_center_c(train_loader, net)
-            logger.info('Center c initialized.')
+            logger.info('Center c initialized to {}.'.format(self.c))
 
         # Training
         logger.info('Starting training...')
@@ -61,9 +61,9 @@ class DeepSADTrainer(BaseTrainer):
         self.train_loss = []
         for epoch in range(self.n_epochs):
 
-            scheduler.step()
+            self.scheduler.step()
             if epoch in self.lr_milestones:
-                logger.info('  LR scheduler: new learning rate is %g' % float(scheduler.get_lr()[0]))
+                logger.info('  LR scheduler: new learning rate is %g' % float(self.scheduler.get_lr()[0]))
 
             train_epoch_loss = 0.0
             n_batches = 0
