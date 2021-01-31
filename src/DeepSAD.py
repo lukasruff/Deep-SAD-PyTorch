@@ -116,15 +116,10 @@ class DeepSAD(object):
     def init_network_weights_from_pretraining(self):
         """Initialize the Deep SAD network weights from the encoder weights of the pretraining autoencoder."""
 
-        net_dict = self.net.state_dict()
-        ae_net_dict = self.ae_net.state_dict()
+        ae_net_dict = self.ae_net.encoder.state_dict()
 
-        # Filter out decoder network keys
-        ae_net_dict = {k: v for k, v in ae_net_dict.items() if k in net_dict}
-        # Overwrite values in the existing state_dict
-        net_dict.update(ae_net_dict)
         # Load the new state_dict
-        self.net.load_state_dict(net_dict)
+        self.net.load_state_dict(ae_net_dict)
 
     def save_model(self, export_model, save_ae=True):
         """Save Deep SAD model to export_model."""
