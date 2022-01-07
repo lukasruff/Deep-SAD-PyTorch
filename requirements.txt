@@ -1,5 +1,5 @@
 Click==7.0
-cvxopt==1.2.3
+cvxopt==1.2.7
 cycler==0.10.0
 joblib==0.13.2
 kiwisolver==1.1.0
